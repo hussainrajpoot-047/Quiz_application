@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>QuizVerse — Test Your Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Syne:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/* ===== CSS VARIABLES ===== */
+:root {
+  --bg: #03010a;
+  --bg2: #07030f;
+  --surface: rgba(255,255,255,0.04);
+  --surface2: rgba(255,255,255,0.08);
+  --border: rgba(255,255,255,0.1);
+  --border2: rgba(255,255,255,0.18);
+  --text: #f0eaff;
+  --text2: #a89bc7;
+  --text3: #6b5f8a;
+  --accent: #b06aff;
+  --accent2: #7c3aed;
+  --neon: #c084fc;
+  --neon2: #e879f9;
+  --easy: #34d399;
+  --medium: #fbbf24;
+  --hard: #f87171;
+  --correct: #34d399;
+  --wrong: #f87171;
+  --glow: 0 0 30px rgba(176,106,255,0.3);
+  --glow2: 0 0 60px rgba(176,106,255,0.15);
+  --radius: 16px;
+  --radius2: 24px;
+  --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+[data-theme="light"] {
+  --bg: #f5f0ff;
+  --bg2: #ede5ff;
+  --surface: rgba(124,58,237,0.06);
+  --surface2: rgba(124,58,237,0.12);
+  --border: rgba(124,58,237,0.15);
+  --border2: rgba(124,58,237,0.28);
+  --text: #1a0a3d;
+  --text2: #5b4080;
+  --text3: #9b85c0;
+  --accent: #7c3aed;
+  --accent2: #6d28d9;
+  --neon: #9333ea;
+  --neon2: #c026d3;
+  --glow: 0 0 30px rgba(124,58,237,0.2);
+  --glow2: 0 0 60px rgba(124,58,237,0.1);
+}
+
+/* ===== RESET ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background var(--transition), color var(--transition);
+}
+
+/* ===== COSMIC BACKGROUND ===== */
+.cosmos {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  overflow: hidden;
+}
+.cosmos-layer {
+  position: absolute; inset: 0;
+  background-image: radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 45% 70%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 65% 50%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 10% 85%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 60%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 35% 15%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 90%, rgba(255,255,255,0.3) 0%, transparent 100%);
+  background-size: 300px 300px;
+  animation: twinkle 8s ease-in-out infinite alternate;
+}
+[data-theme="light"] .cosmos-layer { opacity: 0.15; }
+.cosmos-orb {
+  position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.12;
+}
+.orb1 { width: 600px; height: 600px; background: #7c3aed; top: -200px; right: -200px; animation: orb-float 12s ease-in-out infinite; }
+.orb2 { width: 400px; height: 400px; background: #c026d3; bottom: -100px; left: -100px; animation: orb-float 15s ease-in-out infinite reverse; }
+.orb3 { width: 300px; height: 300px; background: #0ea5e9; top: 40%; left: 40%; animation: orb-float 10s ease-in-out infinite 3s; }
+[data-theme="light"] .cosmos-orb { opacity: 0.06; }
+
+@keyframes twinkle {
+  0% { opacity: 0.6; transform: scale(1); }
+  100% { opacity: 1; transform: scale(1.02); }
+}
+@keyframes orb-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -20px) scale(1.05); }
+  66% { transform: translate(-20px, 30px) scale(0.95); }
+}
+
+/* ===== LAYOUT ===== */
+.app {
+  position: relative; z-index: 1;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 24px 16px 48px;
+}
+
+/* ===== HEADER ===== */
+header {
+  width: 100%; max-width: 900px;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 0 32px;
+}
+.logo {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(18px, 3vw, 24px);
+  font-weight: 900;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, var(--neon), var(--neon2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+}
+.logo span { -webkit-text-fill-color: var(--text3); font-weight: 400; font-size: 0.55em; display: block; letter-spacing: 4px; margin-top: -4px; }
+
+.theme-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition);
+  backdrop-filter: blur(10px);
+}
+.theme-btn:hover { background: var(--surface2); box-shadow: var(--glow); transform: rotate(20deg); }
+
+/* ===== GLASS CARD ===== */
+.glass-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--radius2);
+  padding: 40px;
+  transition: all var(--transition);
+}
+.glass-card:hover { border-color: var(--border2); }
+
+/* ===== SCREENS ===== */
+.screen { width: 100%; max-width: 820px; display: none; animation: fade-in 0.5s ease forwards; }
+.screen.active { display: block; }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== HOME SCREEN ===== */
+.home-hero {
+  text-align: center;
+  padding: 60px 40px 48px;
+}
+.home-hero .eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 20px;
+  display: block;
+}
+.home-hero h1 {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(32px, 6vw, 60px);
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, var(--text) 0%, var(--neon) 60%, var(--neon2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.home-hero p {
+  font-size: 17px;
+  color: var(--text2);
+  max-width: 480px;
+  margin: 0 auto 48px;
+  line-height: 1.7;
+}
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 40px;
+}
+.cat-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 20px;
+  cursor: pointer;
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+.cat-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, var(--cat-color, #7c3aed) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+.cat-card:hover::before, .cat-card.selected::before { opacity: 0.12; }
+.cat-card.selected {
+  border-color: var(--cat-color, var(--accent));
+  box-shadow: 0 0 0 2px var(--cat-color, var(--accent)), 0 0 30px rgba(176,106,255,0.2);
+}
+.cat-icon { font-size: 36px; margin-bottom: 10px; display: block; position: relative; }
+.cat-name { font-weight: 700; font-size: 15px; color: var(--text); position: relative; }
+.cat-count { font-size: 12px; color: var(--text2); margin-top: 4px; position: relative; font-family: 'JetBrains Mono', monospace; }
+
+/* ===== DIFFICULTY ===== */
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 16px;
+  display: block;
+}
+.diff-grid {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 12px;
+  margin-bottom: 40px;
+}
+.diff-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 16px;
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.diff-btn .d-icon { font-size: 28px; display: block; margin-bottom: 8px; }
+.diff-btn .d-name { font-weight: 700; font-size: 15px; display: block; }
+.diff-btn .d-meta { font-size: 12px; color: var(--text2); display: block; margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+.diff-btn[data-diff="easy"] { --dc: var(--easy); }
+.diff-btn[data-diff="medium"] { --dc: var(--medium); }
+.diff-btn[data-diff="hard"] { --dc: var(--hard); }
+.diff-btn.selected {
+  border-color: var(--dc);
+  background: color-mix(in srgb, var(--dc) 12%, transparent);
+  box-shadow: 0 0 0 2px var(--dc), 0 0 30px color-mix(in srgb, var(--dc) 25%, transparent);
+  color: var(--dc);
+}
+.diff-btn.selected .d-name { color: var(--dc); }
+.diff-btn:hover:not(.selected) { border-color: var(--border2); transform: translateY(-2px); }
+
+/* ===== START BUTTON ===== */
+.start-btn {
+  width: 100%;
+  background: linear-gradient(135deg, var(--accent2), var(--accent), var(--neon2));
+  border: none;
+  border-radius: var(--radius);
+  padding: 20px 40px;
+  color: white;
+  font-family: 'Orbitron', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+  background-size: 200%;
+}
+.start-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, white 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+.start-btn:hover { transform: translateY(-3px); box-shadow: 0 20px 60px rgba(176,106,255,0.4); background-position: right center; }
+.start-btn:hover::before { opacity: 0.08; }
+.start-btn:active { transform: translateY(0); }
+.start-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ===== QUIZ SCREEN ===== */
+.quiz-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 28px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.q-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--text2);
+}
+.q-meta strong { color: var(--accent); font-size: 18px; }
+
+/* ===== TIMER ===== */
+.timer-ring {
+  position: relative;
+  width: 72px; height: 72px;
+  flex-shrink: 0;
+}
+.timer-ring svg { transform: rotate(-90deg); }
+.timer-ring .track { fill: none; stroke: var(--surface2); stroke-width: 5; }
+.timer-ring .fill { fill: none; stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 1s linear, stroke 0.5s; }
+.timer-val {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+.timer-val.warning { color: var(--hard); }
+.timer-val.critical { color: var(--hard); animation: pulse 0.5s ease infinite alternate; }
+@keyframes pulse { from { transform: scale(1); } to { transform: scale(1.15); } }
+
+/* ===== PROGRESS BAR ===== */
+.progress-wrap {
+  margin-bottom: 32px;
+}
+.progress-bar {
+  display: flex; gap: 4px; border-radius: 100px; overflow: hidden;
+  height: 8px;
+}
+.prog-seg {
+  flex: 1; height: 100%; border-radius: 100px;
+  background: var(--surface2);
+  transition: background 0.4s ease;
+}
+.prog-seg.correct { background: var(--correct); box-shadow: 0 0 8px var(--correct); }
+.prog-seg.wrong { background: var(--wrong); }
+.prog-seg.current { background: var(--accent); animation: seg-pulse 1s ease infinite alternate; }
+@keyframes seg-pulse { from { opacity: 0.7; } to { opacity: 1; } }
+.prog-label {
+  display: flex; justify-content: space-between;
+  margin-top: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text3);
+}
+
+/* ===== QUESTION ===== */
+.question-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius2);
+  padding: 40px;
+  margin-bottom: 24px;
+}
+.q-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+  display: block;
+}
+.q-text {
+  font-size: clamp(17px, 2.5vw, 22px);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+/* ===== OPTIONS ===== */
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.option-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: left;
+  display: flex; align-items: center; gap: 16px;
+  position: relative;
+  overflow: hidden;
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+}
+.option-btn::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent);
+  transform: scaleY(0);
+  transition: transform var(--transition);
+}
+.option-btn:hover::before { transform: scaleY(1); }
+.option-btn:hover:not(:disabled) {
+  background: var(--surface2);
+  border-color: var(--border2);
+  transform: translateX(4px);
+}
+.opt-letter {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all var(--transition);
+  color: var(--text2);
+}
+.opt-text { flex: 1; line-height: 1.4; }
+
+.option-btn.correct {
+  background: rgba(52, 211, 153, 0.12);
+  border-color: var(--correct);
+  box-shadow: 0 0 0 1px var(--correct), 0 0 20px rgba(52,211,153,0.15);
+}
+.option-btn.correct .opt-letter { background: var(--correct); border-color: var(--correct); color: #0a0a0a; }
+.option-btn.correct::before { background: var(--correct); transform: scaleY(1); }
+.option-btn.wrong {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: var(--wrong);
+  box-shadow: 0 0 0 1px var(--wrong);
+}
+.option-btn.wrong .opt-letter { background: var(--wrong); border-color: var(--wrong); color: #0a0a0a; }
+.option-btn.wrong::before { background: var(--wrong); transform: scaleY(1); }
+.option-btn.missed {
+  opacity: 0.5;
+}
+.option-btn:disabled { cursor: default; transform: none; }
+
+/* ===== EXPLANATION ===== */
+.explanation-box {
+  background: rgba(176,106,255,0.08);
+  border: 1px solid rgba(176,106,255,0.25);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  display: none;
+  animation: fade-in 0.3s ease;
+}
+.explanation-box.visible { display: block; }
+.exp-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+  display: block;
+}
+.exp-text { font-size: 14px; color: var(--text2); line-height: 1.6; }
+
+/* ===== NEXT BUTTON ===== */
+.next-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 16px 32px;
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex; align-items: center; gap: 10px;
+}
+.next-btn:hover { background: var(--accent2); border-color: var(--accent); box-shadow: var(--glow); }
+.next-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ===== RESULTS SCREEN ===== */
+.results-hero {
+  text-align: center;
+  padding: 48px 40px 40px;
+}
+.score-ring-wrap {
+  position: relative;
+  width: 180px; height: 180px;
+  margin: 0 auto 32px;
+}
+.score-ring-wrap svg { transform: rotate(-90deg); }
+.score-ring-wrap .sr-track { fill: none; stroke: var(--surface2); stroke-width: 8; }
+.score-ring-wrap .sr-fill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1.5s cubic-bezier(0.4,0,0.2,1); }
+.score-val {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.score-val .s-num {
+  font-family: 'Orbitron', monospace;
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1;
+}
+.score-val .s-pct { font-size: 14px; color: var(--text2); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+
+.result-title {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(22px, 4vw, 32px);
+  font-weight: 900;
+  margin-bottom: 12px;
+}
+.result-msg { color: var(--text2); font-size: 16px; line-height: 1.6; margin-bottom: 40px; }
+
+.stats-row {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 40px;
+}
+.stat-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  text-align: center;
+}
+.stat-val {
+  font-family: 'Orbitron', monospace;
+  font-size: 28px;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 6px;
+}
+.stat-val.green { color: var(--correct); }
+.stat-val.red { color: var(--wrong); }
+.stat-val.purple { color: var(--accent); }
+.stat-label { font-size: 12px; color: var(--text2); font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; text-transform: uppercase; }
+
+.result-actions {
+  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+}
+.action-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 14px 28px;
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex; align-items: center; gap: 8px;
+}
+.action-btn:hover { transform: translateY(-2px); box-shadow: var(--glow); }
+.action-btn.primary {
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  border-color: transparent;
+  color: white;
+}
+
+/* ===== ANSWER REVIEW ===== */
+.review-section {
+  margin-top: 48px;
+  padding: 0 40px 40px;
+}
+.review-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px;
+}
+.review-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.review-item.correct-item { border-left: 3px solid var(--correct); }
+.review-item.wrong-item { border-left: 3px solid var(--wrong); }
+.review-item.timeout-item { border-left: 3px solid var(--text3); }
+.ri-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 14px; }
+.ri-q { font-weight: 600; font-size: 14px; line-height: 1.5; color: var(--text); flex: 1; }
+.ri-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; padding: 4px 10px;
+  border-radius: 100px; flex-shrink: 0;
+}
+.ri-badge.c { background: rgba(52,211,153,0.15); color: var(--correct); border: 1px solid var(--correct); }
+.ri-badge.w { background: rgba(248,113,113,0.15); color: var(--wrong); border: 1px solid var(--wrong); }
+.ri-badge.t { background: var(--surface2); color: var(--text3); border: 1px solid var(--border); }
+.ri-answer { font-size: 13px; color: var(--text2); margin-top: 8px; }
+.ri-answer strong { color: var(--correct); }
+
+.back-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 10px 20px;
+  color: var(--text2);
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.back-btn:hover { background: var(--surface2); color: var(--text); border-color: var(--accent); box-shadow: var(--glow); transform: translateX(-3px); }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .glass-card, .question-card { padding: 24px 20px; }
+  .review-section { padding: 0 20px 32px; }
+  .results-hero { padding: 32px 20px 28px; }
+  .stats-row { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stat-val { font-size: 22px; }
+  .diff-grid { gap: 8px; }
+  .options-grid { grid-template-columns: 1fr; }
+  .result-actions { flex-direction: column; }
+  .action-btn { justify-content: center; }
+}
+
+/* ===== TOAST ===== */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 100px;
+  padding: 12px 24px;
+  font-size: 14px; color: var(--text);
+  backdrop-filter: blur(20px);
+  transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+  z-index: 1000;
+  white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ===== BADGE / DECORATION ===== */
+.diff-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; padding: 4px 12px;
+  border-radius: 100px;
+  margin-bottom: 24px;
+}
+.diff-badge.easy { background: rgba(52,211,153,0.15); color: var(--easy); border: 1px solid var(--easy); }
+.diff-badge.medium { background: rgba(251,191,36,0.15); color: var(--medium); border: 1px solid var(--medium); }
+.diff-badge.hard { background: rgba(248,113,113,0.15); color: var(--hard); border: 1px solid var(--hard); }
+</style>
+</head>
+<body>
+
+<!-- Cosmic Background -->
+<div class="cosmos">
+  <div class="cosmos-layer"></div>
+  <div class="cosmos-orb orb1"></div>
+  <div class="cosmos-orb orb2"></div>
+  <div class="cosmos-orb orb3"></div>
+</div>
+
+<div class="app">
+  <header>
+    <div class="logo">
+      QuizVerse
+      <span>BY Hussain · KNOWLEDGE ODYSSEY</span>
+    </div>
+    <button class="theme-btn" id="themeBtn" title="Toggle theme">🌙</button>
+  </header>
+
+  <!-- ===== HOME SCREEN ===== -->
+  <div class="screen active" id="homeScreen">
+    <div class="glass-card">
+      <div class="home-hero">
+        <span class="eyebrow">// INITIALIZE QUIZ SEQUENCE</span>
+        <h1>Test Your<br/>Universe</h1>
+        <p>Challenge your intellect across multiple domains. Select a category, choose your difficulty, and prove your mastery.</p>
+      </div>
+
+      <div style="padding: 0 40px;">
+        <span class="section-label">// SELECT CATEGORY</span>
+        <div class="category-grid" id="categoryGrid"></div>
+
+        <span class="section-label">// CHOOSE DIFFICULTY</span>
+        <div class="diff-grid">
+          <button class="diff-btn" data-diff="easy">
+            <span class="d-icon">🌱</span>
+            <span class="d-name">Easy</span>
+            <span class="d-meta">30s · 5 Qs</span>
+          </button>
+          <button class="diff-btn selected" data-diff="medium">
+            <span class="d-icon">⚡</span>
+            <span class="d-name">Medium</span>
+            <span class="d-meta">20s · 5 Qs</span>
+          </button>
+          <button class="diff-btn" data-diff="hard">
+            <span class="d-icon">💀</span>
+            <span class="d-name">Hard</span>
+            <span class="d-meta">12s · 5 Qs</span>
+          </button>
+        </div>
+
+        <button class="start-btn" id="startBtn" disabled>
+          LAUNCH QUIZ →
+        </button>
+      </div>
+      <div style="height:40px;"></div>
+    </div>
+  </div>
+
+  <!-- ===== QUIZ SCREEN ===== -->
+  <div class="screen" id="quizScreen">
+    <div class="quiz-header">
+      <button class="back-btn" id="backBtn">← Back</button>
+      <div class="q-meta">
+        Question <strong id="qNum">1</strong> <span style="color:var(--text3)">/ <span id="qTotal">5</span></span>
+      </div>
+      <div id="diffBadgeWrap"></div>
+      <div class="timer-ring" id="timerRing">
+        <svg width="72" height="72" viewBox="0 0 72 72">
+          <circle class="track" cx="36" cy="36" r="30"/>
+          <circle class="fill" id="timerArc" cx="36" cy="36" r="30"
+            stroke="#b06aff"
+            stroke-dasharray="188.5"
+            stroke-dashoffset="0"/>
+        </svg>
+        <div class="timer-val" id="timerVal">30</div>
+      </div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progressBar"></div>
+      <div class="prog-label">
+        <span id="progCorrect">0 Correct</span>
+        <span id="progWrong">0 Wrong</span>
+      </div>
+    </div>
+
+    <div class="question-card">
+      <span class="q-number" id="qCategory">CATEGORY</span>
+      <p class="q-text" id="qText">Question text here</p>
+    </div>
+
+    <div class="options-grid" id="optionsGrid"></div>
+
+    <div class="explanation-box" id="explanationBox">
+      <span class="exp-label">// EXPLANATION</span>
+      <p class="exp-text" id="explanationText"></p>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end;">
+      <button class="next-btn" id="nextBtn" disabled>
+        Next Question <span>→</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== RESULTS SCREEN ===== -->
+  <div class="screen" id="resultsScreen">
+    <div class="glass-card">
+      <div class="results-hero">
+        <div class="score-ring-wrap">
+          <svg width="180" height="180" viewBox="0 0 180 180">
+            <circle class="sr-track" cx="90" cy="90" r="76"/>
+            <circle class="sr-fill" id="scoreArc" cx="90" cy="90" r="76"
+              stroke="#b06aff"
+              stroke-dasharray="477.5"
+              stroke-dashoffset="477.5"/>
+          </svg>
+          <div class="score-val">
+            <span class="s-num" id="finalScore">0</span>
+            <span class="s-pct" id="finalPct">0%</span>
+          </div>
+        </div>
+        <div id="resultBadge"></div>
+        <div class="result-title" id="resultTitle">Loading...</div>
+        <p class="result-msg" id="resultMsg">...</p>
+        <div class="stats-row">
+          <div class="stat-card">
+            <span class="stat-val green" id="statCorrect">0</span>
+            <span class="stat-label">Correct</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-val red" id="statWrong">0</span>
+            <span class="stat-label">Wrong</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-val purple" id="statTime">0s</span>
+            <span class="stat-label">Avg Time</span>
+          </div>
+        </div>
+        <div class="result-actions">
+          <button class="action-btn" id="downloadBtn">📄 Download PDF</button>
+          <button class="action-btn" id="reviewBtn">📋 Review Answers</button>
+          <button class="action-btn primary" id="playAgainBtn">↺ Play Again</button>
+        </div>
+      </div>
+
+      <div class="review-section" id="reviewSection" style="display:none;">
+        <div class="review-title">Answer Review</div>
+        <div id="reviewItems"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== QUESTION BANK =====
+const QUESTIONS = {
+  science: {
+    name: "Science", icon: "🔬", color: "#06b6d4",
+    questions: {
+      easy: [
+        { q: "What is the chemical symbol for water?", opts: ["H₂O","CO₂","NaCl","O₂"], ans: 0, exp: "Water is composed of two hydrogen atoms and one oxygen atom, giving it the formula H₂O." },
+        { q: "What planet is closest to the Sun?", opts: ["Venus","Earth","Mercury","Mars"], ans: 2, exp: "Mercury is the closest planet to the Sun, orbiting at an average distance of 58 million km." },
+        { q: "How many bones are in the adult human body?", opts: ["186","206","226","246"], ans: 1, exp: "Adults have 206 bones. Babies are born with around 270 bones that fuse over time." },
+        { q: "What gas do plants absorb during photosynthesis?", opts: ["Oxygen","Nitrogen","Carbon Dioxide","Hydrogen"], ans: 2, exp: "Plants absorb CO₂ during photosynthesis and release oxygen as a byproduct." },
+        { q: "What is the speed of light (approx)?", opts: ["300,000 km/s","150,000 km/s","500,000 km/s","100,000 km/s"], ans: 0, exp: "Light travels at approximately 299,792 km/s in a vacuum, often rounded to 300,000 km/s." },
+        { q: "What is the powerhouse of the cell?", opts: ["Nucleus","Ribosome","Mitochondria","Golgi body"], ans: 2, exp: "Mitochondria produce ATP through cellular respiration, earning the nickname 'powerhouse of the cell'." },
+        { q: "Which planet has the most moons?", opts: ["Jupiter","Saturn","Uranus","Neptune"], ans: 1, exp: "Saturn currently holds the record with 146 confirmed moons as of 2023." },
+      ],
+      medium: [
+        { q: "What is the atomic number of Carbon?", opts: ["6","8","12","14"], ans: 0, exp: "Carbon has 6 protons in its nucleus, giving it atomic number 6." },
+        { q: "Which type of wave does NOT require a medium to travel?", opts: ["Sound","Seismic","Electromagnetic","Water"], ans: 2, exp: "Electromagnetic waves can travel through a vacuum, unlike mechanical waves." },
+        { q: "What is the half-life of Carbon-14?", opts: ["1,000 years","3,750 years","5,730 years","10,000 years"], ans: 2, exp: "Carbon-14 has a half-life of approximately 5,730 years, making it useful for radiocarbon dating." },
+        { q: "What is Newton's Second Law of Motion?", opts: ["F=ma","E=mc²","PV=nRT","v=u+at"], ans: 0, exp: "F=ma states that Force equals mass times acceleration." },
+        { q: "What is the SI unit of electric resistance?", opts: ["Watt","Ohm","Ampere","Farad"], ans: 1, exp: "The ohm (Ω) is the SI unit of electrical resistance, named after Georg Simon Ohm." },
+        { q: "At what temperature do Celsius and Fahrenheit scales coincide?", opts: ["0°","−20°","−40°","−100°"], ans: 2, exp: "At −40°, both the Celsius and Fahrenheit scales give the same reading." },
+        { q: "What is the most abundant element in Earth's crust?", opts: ["Iron","Silicon","Oxygen","Aluminum"], ans: 2, exp: "Oxygen makes up approximately 46% of Earth's crust by mass." },
+      ],
+      hard: [
+        { q: "Heisenberg's Uncertainty Principle states you cannot simultaneously know a particle's exact __ and __.", opts: ["Mass and charge","Position and momentum","Speed and direction","Energy and time"], ans: 1, exp: "ΔxΔp ≥ ℏ/2 — you cannot precisely determine both position and momentum at the same time." },
+        { q: "What is the Chandrasekhar limit?", opts: ["Mass above which a star becomes a black hole","Maximum mass of a white dwarf (~1.4 M☉)","Minimum mass for nuclear fusion","Speed limit near neutron stars"], ans: 1, exp: "The Chandrasekhar limit (~1.4 solar masses) is the maximum mass a stable white dwarf can have." },
+        { q: "In quantum mechanics, what does the wave function ψ represent?", opts: ["The particle's exact position","The square root of probability density","A probability amplitude for quantum states","The particle's momentum"], ans: 2, exp: "The wave function ψ is a probability amplitude; |ψ|² gives the probability density of finding a particle." },
+        { q: "Which enzyme is responsible for DNA replication?", opts: ["RNA polymerase","DNA ligase","DNA polymerase III","Helicase"], ans: 2, exp: "DNA polymerase III is the primary enzyme responsible for DNA replication in prokaryotes." },
+        { q: "What phenomenon explains the precession of Mercury's perihelion?", opts: ["Newtonian gravity","Special Relativity","General Relativity","Quantum effects"], ans: 2, exp: "General Relativity accurately predicted the ~43 arcseconds/century unexplained precession of Mercury's orbit." },
+      ]
+    }
+  },
+  history: {
+    name: "History", icon: "📜", color: "#f59e0b",
+    questions: {
+      easy: [
+        { q: "In which year did World War II end?", opts: ["1943","1944","1945","1946"], ans: 2, exp: "WWII ended in 1945 — V-E Day (May 8) in Europe and V-J Day (September 2) in the Pacific." },
+        { q: "Who was the first President of the United States?", opts: ["Thomas Jefferson","John Adams","Benjamin Franklin","George Washington"], ans: 3, exp: "George Washington served as the first U.S. President from 1789 to 1797." },
+        { q: "Which ancient wonder was located in Alexandria?", opts: ["Colossus of Rhodes","Hanging Gardens","Great Lighthouse","Statue of Zeus"], ans: 2, exp: "The Lighthouse of Alexandria (Pharos) was one of the Seven Wonders of the Ancient World." },
+        { q: "The Berlin Wall fell in which year?", opts: ["1987","1988","1989","1991"], ans: 2, exp: "The Berlin Wall fell on November 9, 1989, symbolizing the end of the Cold War era." },
+        { q: "Who painted the Mona Lisa?", opts: ["Michelangelo","Raphael","Leonardo da Vinci","Caravaggio"], ans: 2, exp: "Leonardo da Vinci painted the Mona Lisa, believed to have been completed between 1503–1519." },
+        { q: "In which year did the Titanic sink?", opts: ["1910","1911","1912","1913"], ans: 2, exp: "The RMS Titanic sank on April 15, 1912 after hitting an iceberg in the North Atlantic." },
+        { q: "The French Revolution began in which year?", opts: ["1776","1789","1799","1804"], ans: 1, exp: "The French Revolution began in 1789 with events like the storming of the Bastille on July 14." },
+      ],
+      medium: [
+        { q: "Which empire was ruled by Suleiman the Magnificent?", opts: ["Mughal","Persian","Byzantine","Ottoman"], ans: 3, exp: "Suleiman I ruled the Ottoman Empire from 1520–1566, during its golden age of expansion." },
+        { q: "The Treaty of Versailles was signed in which year?", opts: ["1917","1918","1919","1920"], ans: 2, exp: "The Treaty of Versailles was signed on June 28, 1919, officially ending World War I." },
+        { q: "What was the name of the first artificial satellite?", opts: ["Explorer 1","Vostok 1","Luna 1","Sputnik 1"], ans: 3, exp: "Sputnik 1, launched by the Soviet Union on October 4, 1957, was the first artificial satellite." },
+        { q: "Who wrote the 95 Theses that sparked the Protestant Reformation?", opts: ["John Calvin","Henry VIII","Martin Luther","Erasmus"], ans: 2, exp: "Martin Luther nailed his 95 Theses to the door of the Wittenberg Church in 1517." },
+        { q: "The Magna Carta was signed in which year?", opts: ["1066","1215","1307","1415"], ans: 1, exp: "King John of England signed the Magna Carta in 1215, limiting royal power and establishing rule of law." },
+        { q: "Which pharaoh built the Great Pyramid of Giza?", opts: ["Ramesses II","Tutankhamun","Khufu","Amenhotep III"], ans: 2, exp: "Pharaoh Khufu (also known as Cheops) commissioned the Great Pyramid, built around 2560 BCE." },
+        { q: "What year did Pakistan gain independence?", opts: ["1945","1946","1947","1948"], ans: 2, exp: "Pakistan gained independence on August 14, 1947, following the partition of British India." },
+      ],
+      hard: [
+        { q: "The Peace of Westphalia (1648) ended which wars?", opts: ["Crusades","Hundred Years' War","Thirty Years' War and Eighty Years' War","Ottoman-Habsburg Wars"], ans: 2, exp: "The Peace of Westphalia ended both the Thirty Years' War and the Eighty Years' War, establishing modern state sovereignty." },
+        { q: "Which Mesoamerican civilization built Teotihuacan?", opts: ["Aztec","Maya","Olmec","Unknown/pre-Aztec civilization"], ans: 3, exp: "Teotihuacan's builders remain disputed; it predates Aztec civilization by centuries." },
+        { q: "Who coined the term 'The Great Game' for Anglo-Russian rivalry in Central Asia?", opts: ["Rudyard Kipling","Arthur Conolly","Lord Curzon","Benjamin Disraeli"], ans: 1, exp: "British officer Arthur Conolly coined 'The Great Game' around 1840 for the Anglo-Russian competition over Central Asia." },
+        { q: "The Defenestration of Prague (1618) triggered which conflict?", opts: ["The English Civil War","The Thirty Years' War","The War of Spanish Succession","The Seven Years' War"], ans: 1, exp: "The Second Defenestration of Prague, when Protestants threw Catholic officials from a window, sparked the Thirty Years' War." },
+        { q: "Which ancient script remains undeciphered today?", opts: ["Sumerian cuneiform","Linear B","Linear A","Egyptian hieroglyphs"], ans: 2, exp: "Linear A, used by the Minoan civilization, has never been deciphered, unlike Linear B which was decoded in 1952." },
+      ]
+    }
+  },
+  tech: {
+    name: "Technology", icon: "💻", color: "#8b5cf6",
+    questions: {
+      easy: [
+        { q: "What does HTML stand for?", opts: ["HyperText Markup Language","High Tech Modern Language","HyperText Modern Links","Hyper Transfer Markup Language"], ans: 0, exp: "HTML stands for HyperText Markup Language, the standard language for structuring web pages." },
+        { q: "Who founded Microsoft?", opts: ["Steve Jobs","Elon Musk","Bill Gates & Paul Allen","Mark Zuckerberg"], ans: 2, exp: "Bill Gates and Paul Allen co-founded Microsoft on April 4, 1975." },
+        { q: "What does CPU stand for?", opts: ["Central Processing Unit","Computer Processing Utility","Core Performance Unit","Central Program Unit"], ans: 0, exp: "CPU stands for Central Processing Unit — the primary component that executes instructions." },
+        { q: "Which company developed the Android operating system?", opts: ["Apple","Google","Samsung","Microsoft"], ans: 1, exp: "Android was developed by Android Inc., acquired by Google in 2005, and released in 2008." },
+        { q: "What programming language is known for 'write once, run anywhere'?", opts: ["Python","C++","Java","JavaScript"], ans: 2, exp: "Java's JVM (Java Virtual Machine) enables code to run on any platform, hence the motto." },
+        { q: "What does 'URL' stand for?", opts: ["Universal Resource Locator","Uniform Resource Locator","Unified Remote Link","Universal Remote Locator"], ans: 1, exp: "URL stands for Uniform Resource Locator — the address of a resource on the web." },
+        { q: "What is the binary representation of the decimal number 10?", opts: ["0110","1001","1010","1100"], ans: 2, exp: "10 in binary is 1010 (8+2 = 10)." },
+      ],
+      medium: [
+        { q: "What does REST stand for in web development?", opts: ["Rapid Endpoint State Transfer","Representational State Transfer","Remote Entity Service Technology","Reactive Element State Transfer"], ans: 1, exp: "REST (Representational State Transfer) is an architectural style for distributed hypermedia systems." },
+        { q: "Which data structure uses LIFO (Last In First Out)?", opts: ["Queue","Tree","Stack","Linked List"], ans: 2, exp: "A Stack follows LIFO — the last element pushed is the first to be popped." },
+        { q: "What is Big O notation O(log n) typically associated with?", opts: ["Bubble Sort","Linear Search","Binary Search","Merge Sort"], ans: 2, exp: "Binary search has O(log n) time complexity as it halves the search space each step." },
+        { q: "What does SQL stand for?", opts: ["Structured Query Language","Simple Query Logic","Sequential Queue Language","System Query Layer"], ans: 0, exp: "SQL stands for Structured Query Language, used for managing relational databases." },
+        { q: "In CSS, what does 'em' unit refer to?", opts: ["Screen pixels","Parent element font size","Root font size","Viewport width"], ans: 1, exp: "1em equals the font-size of the parent element. It's relative, unlike the absolute 'px' unit." },
+        { q: "What is the time complexity of accessing an element in a hash table (average)?", opts: ["O(n)","O(log n)","O(1)","O(n²)"], ans: 2, exp: "Hash tables provide O(1) average-case lookups due to direct key-to-index mapping." },
+        { q: "Which HTTP status code indicates 'Not Found'?", opts: ["200","301","403","404"], ans: 3, exp: "HTTP 404 indicates the server could not find the requested resource." },
+      ],
+      hard: [
+        { q: "In distributed systems, the CAP theorem states you can only have 2 of 3: Consistency, Availability, and ___?", opts: ["Concurrency","Partition Tolerance","Performance","Persistence"], ans: 1, exp: "The CAP theorem (Brewer's theorem): a distributed system can only guarantee 2 of Consistency, Availability, and Partition Tolerance." },
+        { q: "What is the output of: `console.log(typeof null)` in JavaScript?", opts: ['"null"','"undefined"','"object"','"boolean"'], ans: 2, exp: "Due to a historical bug in JavaScript, typeof null returns 'object' rather than 'null'." },
+        { q: "What does ACID stand for in database transactions?", opts: ["Atomicity, Consistency, Isolation, Durability","Access, Control, Index, Data","Async, Consistent, Isolated, Durable","Atomic, Concurrent, Indexed, Distributed"], ans: 0, exp: "ACID ensures reliable database transactions: Atomicity, Consistency, Isolation, and Durability." },
+        { q: "In TCP/IP, which layer handles routing between networks?", opts: ["Physical layer","Data link layer","Network (Internet) layer","Transport layer"], ans: 2, exp: "The Network/Internet layer (Layer 3) handles IP addressing and routing packets between networks." },
+        { q: "What is memoization?", opts: ["Memory compression","Caching function results to avoid redundant computation","Garbage collection optimization","A sorting algorithm"], ans: 1, exp: "Memoization caches the results of expensive function calls so that repeated calls with the same inputs return instantly." },
+      ]
+    }
+  },
+  math: {
+    name: "Mathematics", icon: "📐", color: "#10b981",
+    questions: {
+      easy: [
+        { q: "What is the value of π (pi) to 2 decimal places?", opts: ["3.12","3.14","3.16","3.18"], ans: 1, exp: "π ≈ 3.14159... commonly rounded to 3.14." },
+        { q: "What is the square root of 144?", opts: ["11","12","13","14"], ans: 1, exp: "√144 = 12, since 12 × 12 = 144." },
+        { q: "What is 15% of 200?", opts: ["25","30","35","40"], ans: 1, exp: "15% of 200 = 0.15 × 200 = 30." },
+        { q: "How many sides does a hexagon have?", opts: ["5","6","7","8"], ans: 1, exp: "A hexagon has 6 sides. 'Hexa' means six in Greek." },
+        { q: "What is the sum of angles in a triangle?", opts: ["90°","120°","180°","360°"], ans: 2, exp: "The interior angles of any triangle always sum to 180°." },
+        { q: "What is 2⁸ (2 to the power of 8)?", opts: ["128","256","512","64"], ans: 1, exp: "2⁸ = 256 (2×2×2×2×2×2×2×2)." },
+        { q: "What is the formula for the area of a circle?", opts: ["2πr","πr²","πd","4πr²"], ans: 1, exp: "Area = πr², where r is the radius of the circle." },
+      ],
+      medium: [
+        { q: "What is the derivative of sin(x)?", opts: ["−cos(x)","cos(x)","−sin(x)","tan(x)"], ans: 1, exp: "d/dx[sin(x)] = cos(x)." },
+        { q: "What is log₂(64)?", opts: ["5","6","7","8"], ans: 1, exp: "log₂(64) = 6 since 2⁶ = 64." },
+        { q: "Solve: 3x² − 12 = 0. What are the values of x?", opts: ["x = ±2","x = ±3","x = ±4","x = ±6"], ans: 0, exp: "3x² = 12 → x² = 4 → x = ±2." },
+        { q: "What is the formula for the sum of an arithmetic series?", opts: ["n(a+l)","n/2(a+l)","n(a+l)/2","na + nl"], ans: 1, exp: "Sum = n/2 × (first term + last term), where n is the number of terms." },
+        { q: "What is the imaginary unit 'i' defined as?", opts: ["√2","√−2","√−1","1/√2"], ans: 2, exp: "The imaginary unit i = √−1, foundation of complex number theory." },
+        { q: "In how many ways can 5 people be arranged in a row?", opts: ["25","60","120","240"], ans: 2, exp: "5! = 5×4×3×2×1 = 120 permutations." },
+        { q: "What is the Pythagorean theorem?", opts: ["a+b=c","a²+b²=c²","a³+b³=c³","a²−b²=c²"], ans: 1, exp: "In a right triangle: a² + b² = c², where c is the hypotenuse." },
+      ],
+      hard: [
+        { q: "What is Euler's identity?", opts: ["eⁱπ − 1 = 0","eⁱπ + 1 = 0","eⁱ + π = 0","e²ⁱπ = 1"], ans: 1, exp: "Euler's identity: eⁱπ + 1 = 0, considered the most beautiful equation in mathematics." },
+        { q: "What is the integral of e^x?", opts: ["e^x + C","xe^x + C","e^(x+1)/(x+1) + C","ln(x) + C"], ans: 0, exp: "∫eˣ dx = eˣ + C. The exponential function is its own integral." },
+        { q: "Which of these is the Riemann Hypothesis about?", opts: ["Distribution of prime numbers","Convergence of infinite series","Shape of minimal surfaces","Solutions to polynomial equations"], ans: 0, exp: "The Riemann Hypothesis, a $1M Millennium Problem, concerns the distribution of non-trivial zeros of the Riemann zeta function, tied to prime number distribution." },
+        { q: "What does Gödel's Incompleteness Theorem state?", opts: ["Every true statement is provable","Some true statements cannot be proven within any consistent formal system","Mathematics is complete and consistent","There are infinitely many primes"], ans: 1, exp: "Gödel proved that in any consistent formal system strong enough to describe arithmetic, there exist true statements that cannot be proven within that system." },
+        { q: "What is the Monty Hall problem's optimal strategy?", opts: ["Always stick with your first choice","Always switch doors","It makes no difference","Switch only if you picked door 1"], ans: 1, exp: "Switching doors gives a 2/3 probability of winning vs 1/3 by staying — counterintuitively, you should always switch." },
+      ]
+    }
+  },
+  geography: {
+    name: "Geography", icon: "🌍", color: "#ef4444",
+    questions: {
+      easy: [
+        { q: "What is the capital of Australia?", opts: ["Sydney","Melbourne","Canberra","Brisbane"], ans: 2, exp: "Canberra is the capital of Australia, chosen as a compromise between Sydney and Melbourne." },
+        { q: "Which is the longest river in the world?", opts: ["Amazon","Congo","Mississippi","Nile"], ans: 3, exp: "The Nile River, flowing through northeastern Africa, is generally considered the world's longest at ~6,650 km." },
+        { q: "How many continents are there on Earth?", opts: ["5","6","7","8"], ans: 2, exp: "There are 7 continents: Africa, Antarctica, Asia, Australia, Europe, North America, and South America." },
+        { q: "Which country has the largest population?", opts: ["USA","India","China","Indonesia"], ans: 1, exp: "India surpassed China in 2023 to become the world's most populous country." },
+        { q: "What is the smallest country in the world?", opts: ["Monaco","Liechtenstein","Vatican City","San Marino"], ans: 2, exp: "Vatican City, covering just 0.44 km², is the world's smallest country by area and population." },
+        { q: "Which ocean is the largest?", opts: ["Atlantic","Indian","Arctic","Pacific"], ans: 3, exp: "The Pacific Ocean covers about 165 million km², making it larger than all land on Earth combined." },
+        { q: "Mount Everest is located in which mountain range?", opts: ["Alps","Andes","Rockies","Himalayas"], ans: 3, exp: "Mount Everest is part of the Himalayan range on the border of Nepal and Tibet." },
+      ],
+      medium: [
+        { q: "What is the capital of Kazakhstan?", opts: ["Almaty","Nur-Sultan (Astana)","Shymkent","Karaganda"], ans: 1, exp: "Nur-Sultan (now officially Astana again since 2022) is the capital of Kazakhstan." },
+        { q: "The Strait of Malacca separates which two landmasses?", opts: ["Africa and Arabia","Java and Sumatra","Malay Peninsula and Sumatra","Singapore and Borneo"], ans: 2, exp: "The Strait of Malacca lies between the Malay Peninsula and the Indonesian island of Sumatra." },
+        { q: "Which African country has the most pyramids?", opts: ["Egypt","Libya","Ethiopia","Sudan"], ans: 3, exp: "Sudan has more ancient pyramids than Egypt, with over 200 Nubian pyramids at sites like Meroe." },
+        { q: "The Amazon River flows into which ocean?", opts: ["Pacific Ocean","Caribbean Sea","Atlantic Ocean","Gulf of Mexico"], ans: 2, exp: "The Amazon River flows eastward and empties into the Atlantic Ocean near Marajó Island in Brazil." },
+        { q: "Which country shares the longest border with Russia?", opts: ["China","Kazakhstan","Mongolia","Ukraine"], ans: 1, exp: "Kazakhstan shares approximately 7,644 km of border with Russia, the longest of any country." },
+        { q: "What is the deepest lake in the world?", opts: ["Lake Superior","Caspian Sea","Lake Titicaca","Lake Baikal"], ans: 3, exp: "Lake Baikal in Siberia reaches 1,642 m depth, holds ~20% of the world's unfrozen surface freshwater." },
+        { q: "The city of Istanbul straddles which two continents?", opts: ["Africa and Asia","Europe and Asia","Europe and Africa","North and South America"], ans: 1, exp: "Istanbul is uniquely situated across the Bosphorus Strait, spanning Europe and Asia." },
+      ],
+      hard: [
+        { q: "What is the name of the tectonic plate that is largely beneath the Pacific Ocean?", opts: ["Nazca Plate","Pacific Plate","Juan de Fuca Plate","Philippine Plate"], ans: 1, exp: "The Pacific Plate is the world's largest tectonic plate, predominantly under the Pacific Ocean." },
+        { q: "The Wakhan Corridor connects Afghanistan to which country?", opts: ["Pakistan","Tajikistan","China","Uzbekistan"], ans: 2, exp: "The Wakhan Corridor is a narrow strip of Afghan territory that extends to the border with China." },
+        { q: "Which ocean current is responsible for Western Europe's mild climate?", opts: ["California Current","Humboldt Current","North Atlantic Drift (Gulf Stream extension)","Canary Current"], ans: 2, exp: "The North Atlantic Drift, an extension of the Gulf Stream, brings warm water to Western Europe, moderating its climate." },
+        { q: "What is the name of the geographic area where three or more nation-states share a common border point?", opts: ["Tri-border area","Tripoint","Confluence zone","Junction point"], ans: 1, exp: "A tripoint (also tripoint or triple point) is a geographical point at which the boundaries of three countries meet." },
+        { q: "Which country has the most time zones?", opts: ["Russia","USA","China","France"], ans: 3, exp: "France, including its overseas territories, spans 12 time zones, more than any other country." },
+      ]
+    }
+  }
+};
+
+// ===== STATE =====
+let state = {
+  theme: 'dark',
+  selectedCategory: null,
+  selectedDiff: 'medium',
+  questions: [],
+  current: 0,
+  score: 0,
+  answers: [],
+  timers: [],
+  timePerQ: { easy: 30, medium: 20, hard: 12 },
+  timerInterval: null,
+  timeLeft: 20,
+  startTime: null,
+  questionStartTime: null,
+  questionTimes: [],
+  answered: false
+};
+
+// ===== DOM =====
+const $ = id => document.getElementById(id);
+const screens = { home: $('homeScreen'), quiz: $('quizScreen'), results: $('resultsScreen') };
+
+// ===== THEME =====
+$('themeBtn').addEventListener('click', () => {
+  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', state.theme);
+  $('themeBtn').textContent = state.theme === 'dark' ? '🌙' : '☀️';
+});
+
+// ===== BUILD CATEGORIES =====
+function buildCategories() {
+  const grid = $('categoryGrid');
+  grid.innerHTML = '';
+  Object.entries(QUESTIONS).forEach(([key, cat]) => {
+    const card = document.createElement('button');
+    card.className = 'cat-card';
+    card.style.setProperty('--cat-color', cat.color);
+    card.innerHTML = `<span class="cat-icon">${cat.icon}</span><div class="cat-name">${cat.name}</div><div class="cat-count">7 questions</div>`;
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.cat-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      state.selectedCategory = key;
+      updateStartBtn();
+    });
+    grid.appendChild(card);
+  });
+}
+buildCategories();
+
+// ===== DIFFICULTY =====
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    state.selectedDiff = btn.dataset.diff;
+    updateStartBtn();
+  });
+});
+
+function updateStartBtn() {
+  $('startBtn').disabled = !state.selectedCategory;
+}
+
+$('backBtn').addEventListener('click', () => {
+  clearInterval(state.timerInterval);
+  showScreen('home');
+});
+
+
+$('startBtn').addEventListener('click', startQuiz);
+
+function startQuiz() {
+  const cat = QUESTIONS[state.selectedCategory];
+  const pool = cat.questions[state.selectedDiff];
+  const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, 5);
+  shuffled.forEach(q => q.opts = shuffleOpts(q));
+  state.questions = shuffled;
+  state.current = 0;
+  state.score = 0;
+  state.answers = [];
+  state.questionTimes = [];
+  state.startTime = Date.now();
+
+  showScreen('quiz');
+  buildProgressBar();
+  loadQuestion();
+}
+
+function shuffleOpts(q) {
+  const correct = q.opts[q.ans];
+  const shuffled = [...q.opts].sort(() => Math.random() - 0.5);
+  q.ans = shuffled.indexOf(correct);
+  q.opts = shuffled;
+  return shuffled;
+}
+
+function buildProgressBar() {
+  const bar = $('progressBar');
+  bar.innerHTML = '';
+  for (let i = 0; i < state.questions.length; i++) {
+    const seg = document.createElement('div');
+    seg.className = 'prog-seg' + (i === 0 ? ' current' : '');
+    seg.id = `seg-${i}`;
+    bar.appendChild(seg);
+  }
+}
+
+function updateProgressBar() {
+  state.answers.forEach((a, i) => {
+    const seg = $(`seg-${i}`);
+    if (seg) {
+      seg.classList.remove('current', 'correct', 'wrong');
+      seg.classList.add(a.correct ? 'correct' : 'wrong');
+    }
+  });
+  const next = $(`seg-${state.current}`);
+  if (next) next.classList.add('current');
+  const correct = state.answers.filter(a => a.correct).length;
+  const wrong = state.answers.filter(a => !a.correct).length;
+  $('progCorrect').textContent = `${correct} Correct`;
+  $('progWrong').textContent = `${wrong} Wrong`;
+}
+
+// ===== LOAD QUESTION =====
+function loadQuestion() {
+  state.answered = false;
+  const q = state.questions[state.current];
+  const cat = QUESTIONS[state.selectedCategory];
+
+  $('qNum').textContent = state.current + 1;
+  $('qTotal').textContent = state.questions.length;
+  $('qCategory').textContent = `// ${cat.name.toUpperCase()} · ${state.selectedDiff.toUpperCase()}`;
+  $('qText').textContent = q.q;
+  $('explanationBox').classList.remove('visible');
+  $('nextBtn').disabled = true;
+
+  // Diff badge
+  const dbw = $('diffBadgeWrap');
+  const icons = { easy: '🌱', medium: '⚡', hard: '💀' };
+  dbw.innerHTML = `<div class="diff-badge ${state.selectedDiff}">${icons[state.selectedDiff]} ${state.selectedDiff.toUpperCase()}</div>`;
+
+  // Options
+  const grid = $('optionsGrid');
+  grid.innerHTML = '';
+  const letters = ['A','B','C','D'];
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<div class="opt-letter">${letters[i]}</div><div class="opt-text">${opt}</div>`;
+    btn.addEventListener('click', () => selectAnswer(i));
+    grid.appendChild(btn);
+  });
+
+  updateProgressBar();
+  startTimer();
+  state.questionStartTime = Date.now();
+}
+
+// ===== TIMER =====
+function startTimer() {
+  clearInterval(state.timerInterval);
+  const total = state.timePerQ[state.selectedDiff];
+  state.timeLeft = total;
+  const arc = $('timerArc');
+  const val = $('timerVal');
+  const circumference = 188.5;
+
+  function update() {
+    const pct = state.timeLeft / total;
+    arc.style.strokeDashoffset = circumference * (1 - pct);
+    const color = pct > 0.5 ? '#b06aff' : pct > 0.25 ? '#fbbf24' : '#f87171';
+    arc.style.stroke = color;
+    val.textContent = state.timeLeft;
+    val.className = 'timer-val' + (state.timeLeft <= 5 ? ' critical' : state.timeLeft <= Math.ceil(total * 0.3) ? ' warning' : '');
+  }
+  update();
+
+  state.timerInterval = setInterval(() => {
+    state.timeLeft--;
+    update();
+    if (state.timeLeft <= 0) {
+      clearInterval(state.timerInterval);
+      if (!state.answered) timeOut();
+    }
+  }, 1000);
+}
+
+function timeOut() {
+  state.answered = true;
+  const elapsed = (Date.now() - state.questionStartTime) / 1000;
+  state.questionTimes.push(elapsed);
+  state.answers.push({ correct: false, timedOut: true, selected: -1, qIndex: state.current });
+
+  // Highlight correct
+  const btns = $('optionsGrid').querySelectorAll('.option-btn');
+  btns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === state.questions[state.current].ans) btn.classList.add('correct');
+    else btn.classList.add('missed');
+  });
+
+  showExplanation();
+  updateProgressBar();
+  $('nextBtn').disabled = false;
+  showToast('⏱️ Time\'s up!');
+}
+
+// ===== SELECT ANSWER =====
+function selectAnswer(idx) {
+  if (state.answered) return;
+  state.answered = true;
+  clearInterval(state.timerInterval);
+
+  const elapsed = (Date.now() - state.questionStartTime) / 1000;
+  state.questionTimes.push(elapsed);
+
+  const q = state.questions[state.current];
+  const correct = idx === q.ans;
+  if (correct) state.score++;
+  state.answers.push({ correct, timedOut: false, selected: idx, qIndex: state.current });
+
+  const btns = $('optionsGrid').querySelectorAll('.option-btn');
+  btns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.ans) btn.classList.add('correct');
+    else if (i === idx && !correct) btn.classList.add('wrong');
+    else btn.classList.add('missed');
+  });
+
+  showExplanation();
+  updateProgressBar();
+  $('nextBtn').disabled = false;
+
+  if (correct) showToast('✨ Correct!');
+  else showToast('❌ Wrong answer');
+}
+
+function showExplanation() {
+  const q = state.questions[state.current];
+  $('explanationText').textContent = q.exp;
+  $('explanationBox').classList.add('visible');
+}
+
+// ===== NEXT =====
+$('nextBtn').addEventListener('click', () => {
+  state.current++;
+  if (state.current >= state.questions.length) {
+    showResults();
+  } else {
+    loadQuestion();
+  }
+});
+
+// ===== RESULTS =====
+function showResults() {
+  clearInterval(state.timerInterval);
+  showScreen('results');
+
+  const total = state.questions.length;
+  const pct = Math.round((state.score / total) * 100);
+  const avgTime = state.questionTimes.length
+    ? (state.questionTimes.reduce((a,b) => a+b, 0) / state.questionTimes.length).toFixed(1)
+    : 0;
+
+  $('finalScore').textContent = state.score + '/' + total;
+  $('finalPct').textContent = pct + '%';
+  $('statCorrect').textContent = state.score;
+  $('statWrong').textContent = total - state.score;
+  $('statTime').textContent = avgTime + 's';
+
+  // Score ring
+  setTimeout(() => {
+    const arc = $('scoreArc');
+    const circumference = 477.5;
+    const color = pct >= 80 ? '#34d399' : pct >= 50 ? '#b06aff' : '#f87171';
+    arc.style.stroke = color;
+    arc.style.strokeDashoffset = circumference * (1 - pct / 100);
+    $('finalScore').style.color = color;
+  }, 200);
+
+  // Result message
+  const msgs = [
+    { min: 90, title: "LEGENDARY!", msg: "Extraordinary performance. You command this domain with mastery.", badge: "🏆" },
+    { min: 70, title: "EXCELLENT!", msg: "A brilliant result. Your knowledge is razor-sharp.", badge: "⭐" },
+    { min: 50, title: "SOLID EFFORT", msg: "Good foundation, but there's more to explore. Keep pushing!", badge: "💪" },
+    { min: 0,  title: "KEEP GOING", msg: "Every expert was once a beginner. Review and come back stronger.", badge: "📚" },
+  ];
+  const res = msgs.find(m => pct >= m.min);
+  $('resultTitle').textContent = res.title;
+  $('resultMsg').textContent = res.msg;
+  $('resultBadge').innerHTML = `<div style="font-size:48px;margin-bottom:16px;">${res.badge}</div>`;
+
+  buildReview();
+}
+
+function buildReview() {
+  const items = $('reviewItems');
+  items.innerHTML = '';
+  state.questions.forEach((q, i) => {
+    const ans = state.answers[i];
+    const div = document.createElement('div');
+    const cls = ans.timedOut ? 'timeout-item' : ans.correct ? 'correct-item' : 'wrong-item';
+    div.className = `review-item ${cls}`;
+    const badge = ans.timedOut ? '<span class="ri-badge t">TIMEOUT</span>' : ans.correct ? '<span class="ri-badge c">CORRECT</span>' : '<span class="ri-badge w">WRONG</span>';
+    const yourAns = ans.timedOut ? 'No answer (timed out)' : q.opts[ans.selected];
+    const correctAns = q.opts[q.ans];
+    div.innerHTML = `
+      <div class="ri-header">
+        <div class="ri-q">Q${i+1}: ${q.q}</div>
+        ${badge}
+      </div>
+      <div class="ri-answer">Correct: <strong>${correctAns}</strong></div>
+      ${!ans.correct ? `<div class="ri-answer" style="color:var(--wrong);">Your answer: ${yourAns}</div>` : ''}
+      <div class="ri-answer" style="margin-top:8px;font-style:italic;">${q.exp}</div>
+    `;
+    items.appendChild(div);
+  });
+}
+
+// ===== REVIEW TOGGLE =====
+$('reviewBtn').addEventListener('click', () => {
+  const rs = $('reviewSection');
+  if (rs.style.display === 'none') {
+    rs.style.display = 'block';
+    rs.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('reviewBtn').textContent = '🔼 Hide Review';
+  } else {
+    rs.style.display = 'none';
+    $('reviewBtn').innerHTML = '📋 Review Answers';
+  }
+});
+
+// ===== PLAY AGAIN =====
+$('playAgainBtn').addEventListener('click', () => {
+  showScreen('home');
+  $('reviewSection').style.display = 'none';
+  $('reviewBtn').innerHTML = '📋 Review Answers';
+});
+
+// ===== PDF DOWNLOAD =====
+$('downloadBtn').addEventListener('click', downloadPDF);
+
+function downloadPDF() {
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const cat = QUESTIONS[state.selectedCategory];
+    const total = state.questions.length;
+    const pct = Math.round((state.score / total) * 100);
+    const W = doc.internal.pageSize.getWidth();
+
+    // Header
+    doc.setFillColor(20, 10, 40);
+    doc.rect(0, 0, W, 45, 'F');
+    doc.setTextColor(192, 132, 252);
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text('QuizVerse — Results Report', W/2, 18, { align: 'center' });
+    doc.setFontSize(11);
+    doc.setTextColor(168, 155, 199);
+    doc.text(`Category: ${cat.name} · Difficulty: ${state.selectedDiff.toUpperCase()} · ${new Date().toLocaleDateString()}`, W/2, 28, { align: 'center' });
+
+    // Score box
+    doc.setFillColor(40, 20, 70);
+    doc.roundedRect(14, 52, W-28, 28, 4, 4, 'F');
+    doc.setTextColor(192, 132, 252);
+    doc.setFontSize(28);
+    doc.text(`${state.score}/${total}`, W/2, 67, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setTextColor(168, 155, 199);
+    doc.text(`Score: ${pct}%`, W/2, 75, { align: 'center' });
+
+    // Stats
+    let y = 92;
+    const avgTime = state.questionTimes.length
+      ? (state.questionTimes.reduce((a,b)=>a+b,0)/state.questionTimes.length).toFixed(1) + 's'
+      : 'N/A';
+    doc.setFontSize(10);
+    doc.setTextColor(100, 80, 140);
+    const stats = [`Correct: ${state.score}`, `Wrong: ${total-state.score}`, `Avg Time/Q: ${avgTime}`];
+    stats.forEach((s, i) => {
+      doc.setFillColor(30, 15, 55);
+      doc.roundedRect(14 + i * 62, y, 56, 14, 2, 2, 'F');
+      doc.setTextColor(200, 180, 240);
+      doc.text(s, 14 + i * 62 + 28, y + 9, { align: 'center' });
+    });
+
+    y = 118;
+    doc.setTextColor(192, 132, 252);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Answer Review', 14, y);
+    doc.setLineWidth(0.3);
+    doc.setDrawColor(100, 60, 180);
+    doc.line(14, y+3, W-14, y+3);
+    y += 10;
+
+    state.questions.forEach((q, i) => {
+      const ans = state.answers[i];
+      if (y > 260) { doc.addPage(); y = 20; }
+
+      // Q background
+      const bgC = ans.timedOut ? [40,40,40] : ans.correct ? [10,35,25] : [40,10,10];
+      doc.setFillColor(...bgC);
+      doc.roundedRect(14, y, W-28, 28, 3, 3, 'F');
+
+      // Q number + badge
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(ans.timedOut ? 150 : ans.correct ? 52 : 248, ans.timedOut ? 150 : ans.correct ? 211 : 113, ans.timedOut ? 150 : ans.correct ? 153 : 113);
+      const badge = ans.timedOut ? 'TIMEOUT' : ans.correct ? '✓ CORRECT' : '✗ WRONG';
+      doc.text(`Q${i+1}: ${badge}`, 20, y+8);
+
+      // Question text (truncated)
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(220, 210, 240);
+      doc.setFontSize(8);
+      const qTxt = q.q.length > 80 ? q.q.slice(0,77)+'...' : q.q;
+      doc.text(qTxt, 20, y+15);
+
+      // Correct answer
+      doc.setTextColor(100, 210, 160);
+      doc.setFontSize(7.5);
+      doc.text(`Correct: ${q.opts[q.ans]}`, 20, y+23);
+
+      y += 33;
+    });
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setTextColor(80, 60, 110);
+    doc.text('Generated by QuizVerse · CSC336 Web Technologies Assignment 2', W/2, 287, { align: 'center' });
+
+    doc.save(`QuizVerse_Results_${cat.name}_${state.selectedDiff}.pdf`);
+    showToast('📄 PDF Downloaded!');
+  } catch(e) {
+    showToast('❌ PDF generation failed');
+    console.error(e);
+  }
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===== SCREEN SWITCH =====
+function showScreen(name) {
+  Object.entries(screens).forEach(([k, el]) => {
+    el.classList.toggle('active', k === name);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
